@@ -1,10 +1,59 @@
 import * as chokidar from "chokidar"
-import * as fs from "fs"
+import fs from "fs-extra"
 
+/**
+ * @template T type of config
+ *
+ * @description
+ * The `Config` class provides a way to read, write, and watch a configuration file.
+ * It supports automatic reloading when the file is changed, as well as saving the
+ * configuration back to the file whenever modifications are made.
+ *
+ * This class uses a Proxy to enable reactive configuration updates and ensure
+ * changes are automatically saved. It also watches the configuration file for changes
+ * and reloads the configuration when the file is updated or deleted.
+ * 
+ * // Define a configuration type
+ * interface AppConfig {
+ *     username: string;
+ *     theme: string;
+ * }
+ * 
+ * /// Create an instance of the Config class
+ * const config = new Config<AppConfig>("config.json", {
+ *     username: "user123",
+ *     theme: "dark"
+ * }, true);
+ * 
+ * let username = config.get().username;
+ * // Access and modify the configuration
+ * console.log(username); // "user123"
+ * username = "newUser"; // Updates the configuration and saves it automatically
+ * 
+ * // Reload configuration after changes
+ * config.reload();
+ * 
+ * @example
+ * // Watching for changes:
+ * const configWithWatch = new Config<AppConfig>("config.json", {
+ *     username: "user123",
+ *     theme: "light"
+ * }, true); // Will automatically reload configuration on file change
+ */
 export class Config<T extends object> {
+    /** File watcher instance for watching the config file changes */
     #fileWatcher: chokidar.FSWatcher | undefined
 
+    /** Proxy handler for the configuration object to enable reactive updates */
     #proxyHandler: ProxyHandler<T> = {
+        /**
+         * Intercepts `get` operations on the configuration object.
+         * If the requested property is an object, it wraps it in a Proxy for further nesting.
+         *
+         * @param target - The target configuration object
+         * @param key - The property key to access
+         * @returns The value of the property, wrapped in a Proxy if it is an object
+         */
         get: (target, key) => {
             if (key === "__isProxied") {
                 return true
@@ -15,6 +64,15 @@ export class Config<T extends object> {
                 : ret
         },
 
+        /**
+         * Intercepts `set` operations on the configuration object.
+         * Automatically saves the configuration after each update unless it is being reassigned during the `load` process.
+         *
+         * @param target - The target configuration object
+         * @param key - The property key to set
+         * @param newValue - The new value to assign
+         * @returns `true` if the property was successfully set
+         */
         set: (target, key, newValue) => {
             let result = Reflect.set(target, key, newValue)
             if (!this.#reAssigning) {
@@ -24,18 +82,36 @@ export class Config<T extends object> {
         },
     }
 
+    /** Timestamp of the last save operation */
     #lastSaveTime: number = -1
 
+    /** Flag to prevent unnecessary recursive saving during config reassignment */
     #reAssigning: boolean = false
 
+    /** The default configuration object that holds the initial configuration values */
+    #defaultConfig: T
+
+    /**
+     * Creates an instance of the Config class.
+     *
+     * @param path - The file path to the configuration file
+     * @param config - The initial configuration object
+     * @param watchFile - Whether to watch the config file for changes (default: false).
+     *  If true, the file will be watched for changes and the configuration will be reloaded when the file is modified, added, or deleted.
+     */
     constructor(
         public readonly path: string,
         public config: T,
         public readonly watchFile: boolean = false
     ) {
+        this.#defaultConfig = config
         this.#init()
     }
 
+    /**
+     * Registers a file watcher to automatically reload the configuration
+     * when the file is modified, added, or deleted.
+     */
     #registerFileWatcher() {
         this.#fileWatcher = chokidar
             .watch(this.path, {
@@ -54,8 +130,10 @@ export class Config<T extends object> {
                 }
             })
             .on("add", (path, stats) => {
-                console.log("added")
-                this.load()
+                if ((stats as fs.Stats).mtime.getTime() > this.#lastSaveTime) {
+                    console.log("added")
+                    this.load()
+                }
             })
             .on("unlink", (path, stats) => {
                 console.log("deleted")
@@ -63,46 +141,54 @@ export class Config<T extends object> {
             })
     }
 
-    #init() {
-        this.load()
+    /**
+     * Initializes the config by loading it from the file and setting up file watching if necessary.
+     */
+    async #init() {
+        await this.load()
         if (this.watchFile && !this.#fileWatcher) {
             this.#registerFileWatcher()
         }
     }
 
-    load() {
-        if (fs.existsSync(this.path)) {
-            let configDataStr: string = fs
-                .readFileSync(this.path, { encoding: "utf8" })
-                .replace(/\/\/.*|\/\*[^]*?\*\//g, "")
+    /**
+     * Loads the configuration from the specified file.
+     * If the file does not exist, it creates an empty config file.
+     * In case of an error, it attempts to rename the old configuration file.
+     */
+    async load() {
+        if (await fs.pathExists(this.path)) {
             try {
-                let configData = JSON.parse(configDataStr)
+                let configData = await fs.readJSON(this.path, { throws: true })
                 if ((this.config as any).__isProxied) {
                     this.#reAssigning = true
-                    console.log(
-                        "reassigning",
-                        this.#lastSaveTime,
-                        fs.statSync(this.path).mtime.getTime()
-                    )
                     Object.assign(this.config, configData)
                     this.#reAssigning = false
                     return
                 }
-                console.log("proxying")
-                this.config = new Proxy(configData, this.#proxyHandler)
+                this.config = new Proxy(
+                    Object.assign({}, this.config, configData),
+                    this.#proxyHandler
+                )
             } catch {
                 console.warn("Occurred an error while initializing a Config.")
                 let newPath = this.path + "_old"
-                fs.renameSync(this.path, newPath)
+                await fs.rename(this.path, newPath)
             }
+        } else {
+            await fs.ensureFile(this.path)
         }
-        this.save()
+        await this.save()
     }
 
-    save(indentation: number = 4) {
-        let configData = JSON.stringify(this.config, null, indentation)
-        fs.writeFileSync(this.path, configData)
-        this.#lastSaveTime = fs.statSync(this.path).mtime.getTime()
+    /**
+     * Saves the current configuration object to the file.
+     *
+     * @param indentation - The number of spaces to use for indentation (default: 4)
+     */
+    async save(indentation: number = 4) {
+        await fs.writeJSON(this.path, this.config, { spaces: indentation })
+        this.#lastSaveTime = (await fs.stat(this.path)).mtime.getTime()
     }
 
     async unload() {
@@ -110,14 +196,30 @@ export class Config<T extends object> {
             await this.#fileWatcher.close()
             this.#fileWatcher = undefined
         }
-        this.config = {} as T
+        this.config = this.#defaultConfig as T
     }
 
-    reload() {
-        this.unload().finally(() => this.#init())
+    /**
+     * Reloads the configuration by unloading and then reinitializing it.
+     */
+    async reload() {
+        await this.unload()
+        await this.#init()
     }
 
+    /**
+     * Returns a proxy that wraps the current configuration object, enabling reactive access and updates.
+     *
+     * @returns A proxy for the configuration object
+     */
     get() {
-        return this.config
+        return new Proxy(this.config, {
+            get: (target, key) => {
+                return Reflect.get(this.config, key)
+            },
+            set: (target, key, newValue) => {
+                return Reflect.set(this.config, key, newValue)
+            },
+        })
     }
 }

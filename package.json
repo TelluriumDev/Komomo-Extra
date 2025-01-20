@@ -4,19 +4,24 @@
   "description": "Extra Library for the LeviLamina JavaScript mod with Komomo",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TelluriumDev/Komomo-Extra.git"
   },
   "author": "",
-  "type": "module",
   "license": "ISC",
-  "dependencies": {
-    "chokidar": "^4.0.3",
-    "komomo-extra": "file:",
-    "typescript": "^5.7.3"
+  "bugs": {
+    "url": "https://github.com/TelluriumDev/Komomo-Extra/issues"
   },
-  "devDependencies": {
+  "homepage": "https://github.com/TelluriumDev/Komomo-Extra#readme",
+  "dependencies": {
+    "@types/fs-extra": "^11.0.4",
     "@types/node": "^22.10.7",
-    "ts-node": "^10.9.2"
+    "chokidar": "^4.0.3",
+    "fs-extra": "^11.3.0",
+    "komomo-extra": "file:"
   }
 }
