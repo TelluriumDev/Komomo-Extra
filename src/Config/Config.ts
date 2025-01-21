@@ -12,27 +12,27 @@ import fs from "fs-extra"
  * This class uses a Proxy to enable reactive configuration updates and ensure
  * changes are automatically saved. It also watches the configuration file for changes
  * and reloads the configuration when the file is updated or deleted.
- * 
+ *
  * // Define a configuration type
  * interface AppConfig {
  *     username: string;
  *     theme: string;
  * }
- * 
- * /// Create an instance of the Config class
+ *
+ * // Create an instance of the Config class
  * const config = new Config<AppConfig>("config.json", {
  *     username: "user123",
  *     theme: "dark"
  * }, true);
- * 
+ *
  * let username = config.get().username;
  * // Access and modify the configuration
  * console.log(username); // "user123"
  * username = "newUser"; // Updates the configuration and saves it automatically
- * 
+ *
  * // Reload configuration after changes
  * config.reload();
- * 
+ *
  * @example
  * // Watching for changes:
  * const configWithWatch = new Config<AppConfig>("config.json", {
@@ -98,14 +98,39 @@ export class Config<T extends object> {
      * @param config - The initial configuration object
      * @param watchFile - Whether to watch the config file for changes (default: false).
      *  If true, the file will be watched for changes and the configuration will be reloaded when the file is modified, added, or deleted.
+     * @param initManually - Whether to initialize the configuration manually or let the constructor do it (default: false).
+     * If you set this to true, you need to call the `init` method manually.
      */
     constructor(
         public readonly path: string,
         public config: T,
-        public readonly watchFile: boolean = false
+        public readonly watchFile: boolean = false,
+        initManually: boolean = false
     ) {
         this.#defaultConfig = config
-        this.#init()
+        if (!initManually) {
+            this.init()
+        }
+    }
+
+    /**
+     * Creates an instance of the Config class and initializes it automatically.
+     *
+     *
+     * @param path - The file path to the configuration file
+     * @param config - The initial configuration object
+     * @param watchFile - Whether to watch the config file for changes (default: false).
+     *  If true, the file will be watched for changes and the configuration will be reloaded when the file is modified, added, or deleted.
+     * @returns The initialized Config instance
+     */
+    static async createConfig<T extends object>(
+        path: string,
+        config: T,
+        watchFile = false
+    ) {
+        let configInstance = new Config<T>(path, config, watchFile, true)
+        await configInstance.init()
+        return configInstance
     }
 
     /**
@@ -144,7 +169,7 @@ export class Config<T extends object> {
     /**
      * Initializes the config by loading it from the file and setting up file watching if necessary.
      */
-    async #init() {
+    async init() {
         await this.load()
         if (this.watchFile && !this.#fileWatcher) {
             this.#registerFileWatcher()
@@ -204,7 +229,7 @@ export class Config<T extends object> {
      */
     async reload() {
         await this.unload()
-        await this.#init()
+        await this.init()
     }
 
     /**
