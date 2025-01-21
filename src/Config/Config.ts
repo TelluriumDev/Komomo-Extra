@@ -1,5 +1,6 @@
 import * as chokidar from "chokidar"
 import fs from "fs-extra"
+import path from "path"
 
 /**
  * @template T type of config
@@ -24,12 +25,12 @@ import fs from "fs-extra"
  *     username: "user123",
  *     theme: "dark"
  * }, true);
- * 
+ *
  * let configData = config.get();
  * // Access and modify the configuration
  * console.log(configData.username); // "user123"
  * configData.username = "newUser"; // Updates the configuration and saves it automatically
- * 
+ *
  * // Reload configuration after changes
  * config.reload();
  *
@@ -246,5 +247,119 @@ export class Config<T extends object> {
                 return Reflect.set(this.config, key, newValue)
             },
         })
+    }
+}
+
+export class Language<T extends { [key: string]: string }> extends Config<T> {
+    constructor(
+        path: string,
+        watchFile: boolean = false,
+        defaultValue: T = {} as T,
+        initManually: boolean = false
+    ) {
+        super(path, defaultValue, watchFile, initManually)
+    }
+    static async createLanguage<T extends { [key: string]: string }>(
+        path: string,
+        watchFile = false,
+        defaultValue: T = {} as T
+    ) {
+        let langInstance = new Language<T>(path, watchFile, defaultValue, true)
+        await langInstance.init()
+        return langInstance
+    }
+    translate(key: string, data: any[]) {
+        let result = this.get()[key]
+        if (!result) {
+            return key
+        }
+        for (let i = 0; i < data.length; i++) {
+            let old = `{${data[i]}}`
+            result = result.split(old).join(data[i])
+        }
+    }
+}
+
+export class I18n<T extends { [key: string]: string }> {
+    #languages: Map<string, Language<T>> = new Map()
+    constructor(
+        public readonly path: string,
+        public localLangCode: string,
+        public readonly watchFile: boolean = false,
+        public readonly defaultValue: T = {} as T,
+        initManually: boolean = false
+    ) {
+        if (!initManually) {
+            this.loadAllLanguages()
+        }
+    }
+    static async createI18n<T extends { [key: string]: string }>(
+        path: string,
+        localLangCode: string,
+        watchFile: boolean = false,
+        defaultValue: T = {} as T
+    ) {
+        let i18nInstance = new I18n<T>(
+            path,
+            localLangCode,
+            watchFile,
+            defaultValue,
+            true
+        )
+        await i18nInstance.loadAllLanguages()
+        return i18nInstance
+    }
+    async loadAllLanguages() {
+        let langFiles = await fs.readdir(this.path)
+        for (let langFile of langFiles) {
+            await this.loadLanguage(path.parse(langFile).name)
+        }
+    }
+    async loadLanguage(langCode: string) {
+        this.#languages.set(
+            langCode,
+            await Language.createLanguage(
+                path.resolve(this.path, `${langCode}.json`),
+                this.watchFile,
+                this.defaultValue
+            )
+        )
+    }
+    switchLanguage(langCode: string) {
+        if (this.#languages.has(langCode)) {
+            this.localLangCode = langCode
+        }
+    }
+    get(langCode?: string) {
+        let lang = this.#languages.get(langCode || this.localLangCode)
+        if (!lang) {
+            throw new Error(
+                `Language '${lang}' not found. Please load it first.`
+            )
+        }
+        return new Proxy(lang.get(), {
+            get: (target, key) => {
+                return Reflect.get(lang.get(), key)
+            },
+            set: (target, key, newValue) => {
+                return Reflect.set(lang.get(), key, newValue)
+            },
+        })
+    }
+    async unloadLanguage(langCode: string) {
+        let lang = this.#languages.get(langCode)
+        if (lang) {
+            await lang.unload()
+            this.#languages.delete(langCode)
+        }
+    }
+    async reloadLanguage(langCode: string) {
+        await this.unloadLanguage(langCode)
+        await this.loadLanguage(langCode)
+    }
+    async reloadAllLanguages() {
+        for (let lang of this.#languages.keys()) {
+            await this.reloadLanguage(lang)
+        }
     }
 }
