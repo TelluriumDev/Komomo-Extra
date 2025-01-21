@@ -40,6 +40,15 @@ import path from "path"
  *     username: "user123",
  *     theme: "light"
  * }, true); // Will automatically reload configuration on file change
+ * @example
+ * // Asynchronous initialization:
+ * async function setup() {
+ *     const config = await Config.createConfig("config.json", { username: "guest", theme: "dark" }, true); 
+ * // Tip: It's recommended to use `createConfig` to ensure the configuration is fully initialized before accessing it.
+ *     console.log(config.get().username); // Will print "guest" after initialization is complete
+ * }
+ * setup();
+ * 
  */
 export class Config<T extends object> {
     /** File watcher instance for watching the config file changes */
@@ -217,6 +226,9 @@ export class Config<T extends object> {
         this.#lastSaveTime = (await fs.stat(this.path)).mtime.getTime()
     }
 
+    /**
+     * Unloads the current configuration and stops watching the file for changes.
+     */
     async unload() {
         if (this.#fileWatcher) {
             await this.#fileWatcher.close()
