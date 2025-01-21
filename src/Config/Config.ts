@@ -24,12 +24,12 @@ import fs from "fs-extra"
  *     username: "user123",
  *     theme: "dark"
  * }, true);
- *
- * let username = config.get().username;
+ * 
+ * let configData = config.get();
  * // Access and modify the configuration
- * console.log(username); // "user123"
- * username = "newUser"; // Updates the configuration and saves it automatically
- *
+ * console.log(configData.username); // "user123"
+ * configData.username = "newUser"; // Updates the configuration and saves it automatically
+ * 
  * // Reload configuration after changes
  * config.reload();
  *
