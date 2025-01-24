@@ -420,6 +420,7 @@ export class I18n<T extends { [key: string]: string }> {
         await i18nInstance.loadAllLanguages()
         return i18nInstance
     }
+
     /**
      * Loads all language files from the specified directory and adds them to the languages map.
      */
@@ -435,15 +436,27 @@ export class I18n<T extends { [key: string]: string }> {
      *
      * @param langCode - The language code to load
      */
-    async loadLanguage(langCode: string) {
-        this.#languages.set(
-            langCode,
-            await Language.createLanguage(
-                path.resolve(this.path, `${langCode}.json`),
+    loadLanguage(langCode: string): Promise<void>
+
+    /**
+     * Loads a `Language` instance and adds it to the languages map.
+     *
+     * @param lang - The `Language` instance to load
+     */
+    loadLanguage(lang: Language<T>): void
+
+    loadLanguage(value: any): any {
+        // implement for string
+        if (typeof value === "string") {
+            return Language.createLanguage(
+                path.resolve(this.path, `${value}.json`),
                 this.watchFile,
                 this.defaultValue
-            )
-        )
+            ).then((lang) => this.#languages.set(value, lang))
+        }
+
+        // implement for Language<T>
+        this.#languages.set(path.parse(value.path).name, value)
     }
 
     /**
