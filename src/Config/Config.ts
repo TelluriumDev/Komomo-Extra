@@ -43,12 +43,12 @@ import path from "path"
  * @example
  * // Asynchronous initialization:
  * async function setup() {
- *     const config = await Config.createConfig("config.json", { username: "guest", theme: "dark" }, true); 
+ *     const config = await Config.createConfig("config.json", { username: "guest", theme: "dark" }, true);
  * // Tip: It's recommended to use `createConfig` to ensure the configuration is fully initialized before accessing it.
  *     console.log(config.get().username); // Will print "guest" after initialization is complete
  * }
  * setup();
- * 
+ *
  */
 export class Config<T extends object> {
     /** File watcher instance for watching the config file changes */
@@ -262,7 +262,31 @@ export class Config<T extends object> {
     }
 }
 
+/**
+ * @template T type of language dictionary (key-value pairs for translations)
+ *
+ * @description
+ * The `Language` class extends the `Config` class and provides a way to manage
+ * language files for internationalization (i18n). It can watch the language file
+ * for changes and reload the translations when the file is updated.
+ *
+ * This class allows accessing and translating keys dynamically. If the translation
+ * key is missing, it will return the key itself. It also supports replacing placeholders
+ * in translations with data values.
+ *
+ * @example
+ * const language = new Language<{ [key: string]: string }>("en.json", true, { greeting: "Hello, {0}!" });
+ * const translated = language.translate("greeting", ["John"]); // "Hello, John!"
+ */
 export class Language<T extends { [key: string]: string }> extends Config<T> {
+    /**
+     * Creates an instance of the `Language` class.
+     *
+     * @param path - The file path to the language file
+     * @param watchFile - Whether to watch the language file for changes (default: false)
+     * @param defaultValue - The default translations for the language
+     * @param initManually - Whether to initialize the language manually or let the constructor do it (default: false)
+     */
     constructor(
         path: string,
         watchFile: boolean = false,
@@ -271,6 +295,15 @@ export class Language<T extends { [key: string]: string }> extends Config<T> {
     ) {
         super(path, defaultValue, watchFile, initManually)
     }
+
+    /**
+     * Creates an instance of the `Language` class and initializes it automatically.
+     *
+     * @param path - The file path to the language file
+     * @param watchFile - Whether to watch the language file for changes (default: false)
+     * @param defaultValue - The default translations for the language
+     * @returns The initialized `Language` instance
+     */
     static async createLanguage<T extends { [key: string]: string }>(
         path: string,
         watchFile = false,
@@ -280,20 +313,76 @@ export class Language<T extends { [key: string]: string }> extends Config<T> {
         await langInstance.init()
         return langInstance
     }
-    translate(key: string, data: any[]) {
-        let result = this.get()[key]
+
+    /**
+     * Translates a given key with optional placeholders replaced by the provided data.
+     *
+     * @param key - The translation key to lookup in the language dictionary
+     * @param data - An array of data values to replace placeholders in the translation string
+     * @returns The translated string with placeholders replaced, or the key itself if no translation is found
+     */
+    translate(key: keyof T, data: any[]) {
+        let result: string = this.get()[key]
         if (!result) {
             return key
         }
         for (let i = 0; i < data.length; i++) {
             let old = `{${data[i]}}`
-            result = result.split(old).join(data[i])
+            result = result.split(old).join(data[i] as string)
         }
     }
 }
 
+/**
+ * @template T type of language dictionary (key-value pairs for translations)
+ *
+ * @description
+ * The `I18n` class is designed to handle multiple languages for internationalization (i18n).
+ * It loads, manages, and switches between various `Language` instances dynamically, allowing
+ * translation to be fetched based on the current language code. The class can also watch language
+ * files for changes and reload them automatically.
+ *
+ * This class provides methods to:
+ * - Load and switch between languages.
+ * - Retrieve translations for keys in the active language.
+ * - Reload individual languages or all languages at once.
+ *
+ * @example
+ * // Initialize I18n with English as the default language
+ * const i18n = new I18n<{ greeting: string }>("./languages", "en", true);
+ *
+ * // or await for initialization:
+ * const i18n = await I18n.createI18n<{ greeting: string }>("./languages", "en", true);
+ *
+ * // Access translations in the current language
+ * console.log(i18n.get().greeting); // "Hello" (if `en.json` exists with { "greeting": "Hello" })
+ *
+ * // Switch language to French
+ * i18n.switchLanguage("fr");
+ * console.log(i18n.get().greeting); // "Bonjour" (if `fr.json` exists with { "greeting": "Bonjour" })
+ *
+ * // Use the `translate` method to dynamically replace placeholders in translations
+ * const translated = i18n.translate("greeting", ["Alice"]);
+ * console.log(translated); // "Hello, Alice!" (or equivalent in the active language)
+ *
+ * // Reload the French language file
+ * await i18n.reloadLanguage("fr");
+ *
+ * // Reload all languages
+ * await i18n.reloadAllLanguages();
+ */
 export class I18n<T extends { [key: string]: string }> {
     #languages: Map<string, Language<T>> = new Map()
+    /**
+     * Creates an instance of the `I18n` class and initializes it automatically.
+     *
+     * @param path - The directory path where language files are stored
+     * @param localLangCode - The initial language code to use
+     * @param watchFile - Whether to watch language files for changes (default: false)
+     * @param defaultValue - The default language translations (default: empty object)
+     * @param initManually - Whether to initialize the `I18n` instance manually (default: false)
+     * @returns The initialized `I18n` instance
+     */
     constructor(
         public readonly path: string,
         public localLangCode: string,
@@ -305,6 +394,16 @@ export class I18n<T extends { [key: string]: string }> {
             this.loadAllLanguages()
         }
     }
+
+    /**
+     * Creates an instance of the `I18n` class and initializes it automatically.
+     *
+     * @param path - The directory path where language files are stored
+     * @param localLangCode - The initial language code to use
+     * @param watchFile - Whether to watch language files for changes (default: false)
+     * @param defaultValue - The default language translations (default: empty object)
+     * @returns The initialized `I18n` instance
+     */
     static async createI18n<T extends { [key: string]: string }>(
         path: string,
         localLangCode: string,
@@ -321,12 +420,21 @@ export class I18n<T extends { [key: string]: string }> {
         await i18nInstance.loadAllLanguages()
         return i18nInstance
     }
+    /**
+     * Loads all language files from the specified directory and adds them to the languages map.
+     */
     async loadAllLanguages() {
         let langFiles = await fs.readdir(this.path)
         for (let langFile of langFiles) {
             await this.loadLanguage(path.parse(langFile).name)
         }
     }
+
+    /**
+     * Loads a single language file by its code and adds it to the languages map.
+     *
+     * @param langCode - The language code to load
+     */
     async loadLanguage(langCode: string) {
         this.#languages.set(
             langCode,
@@ -337,11 +445,25 @@ export class I18n<T extends { [key: string]: string }> {
             )
         )
     }
+
+    /**
+     * Switches the current active language to the specified language code.
+     *
+     * @param langCode - The language code to switch to
+     */
     switchLanguage(langCode: string) {
         if (this.#languages.has(langCode)) {
             this.localLangCode = langCode
         }
     }
+
+    /**
+     * Returns the translations for the current active language or the specified language code.
+     *
+     * @param langCode - The language code to fetch translations for (optional, defaults to `localLangCode`)
+     * @returns The `Language` instance for the specified language
+     * @throws Error if the language code does not exist
+     */
     get(langCode?: string) {
         let lang = this.#languages.get(langCode || this.localLangCode)
         if (!lang) {
@@ -349,15 +471,30 @@ export class I18n<T extends { [key: string]: string }> {
                 `Language '${lang}' not found. Please load it first.`
             )
         }
-        return new Proxy(lang.get(), {
-            get: (target, key) => {
-                return Reflect.get(lang.get(), key)
-            },
-            set: (target, key, newValue) => {
-                return Reflect.set(lang.get(), key, newValue)
-            },
-        })
+        return lang
     }
+
+    /**
+     * Translates a given key with optional placeholders replaced by the provided data.
+     *
+     * @param key - The translation key to lookup in the language dictionary
+     * @param data - An array of data values to replace placeholders in the translation string
+     * @param langCode - The language code to use for translation (optional, defaults to `localLangCode`)
+     * @returns The translated string with placeholders replaced, or the key itself if no translation is found
+     */
+    translate(key: keyof T, data: any[], langCode?: string) {
+        let lang = langCode || this.localLangCode
+        if (!this.#languages.has(lang)) {
+            return key
+        }
+        return this.get(lang).translate(key, data)
+    }
+
+    /**
+     * Unloads the specified language and removes it from the languages map.
+     *
+     * @param langCode - The language code to unload
+     */
     async unloadLanguage(langCode: string) {
         let lang = this.#languages.get(langCode)
         if (lang) {
@@ -365,10 +502,20 @@ export class I18n<T extends { [key: string]: string }> {
             this.#languages.delete(langCode)
         }
     }
+
+    /**
+     * Reloads the specified language and updates its translations.
+     *
+     * @param langCode - The language code to reload
+     */
     async reloadLanguage(langCode: string) {
         await this.unloadLanguage(langCode)
         await this.loadLanguage(langCode)
     }
+
+    /**
+     * Reloads all languages and updates their translations.
+     */
     async reloadAllLanguages() {
         for (let lang of this.#languages.keys()) {
             await this.reloadLanguage(lang)
