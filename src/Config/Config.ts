@@ -54,44 +54,6 @@ export class Config<T extends object> {
     /** File watcher instance for watching the config file changes */
     #fileWatcher: chokidar.FSWatcher | undefined
 
-    /** Proxy handler for the configuration object to enable reactive updates */
-    #proxyHandler: ProxyHandler<T> = {
-        /**
-         * Intercepts `get` operations on the configuration object.
-         * If the requested property is an object, it wraps it in a Proxy for further nesting.
-         *
-         * @param target - The target configuration object
-         * @param key - The property key to access
-         * @returns The value of the property, wrapped in a Proxy if it is an object
-         */
-        get: (target, key) => {
-            if (key === "__isProxied") {
-                return true
-            }
-            let ret = Reflect.get(target, key)
-            return typeof ret === "object"
-                ? new Proxy(ret as object, this.#proxyHandler)
-                : ret
-        },
-
-        /**
-         * Intercepts `set` operations on the configuration object.
-         * Automatically saves the configuration after each update unless it is being reassigned during the `load` process.
-         *
-         * @param target - The target configuration object
-         * @param key - The property key to set
-         * @param newValue - The new value to assign
-         * @returns `true` if the property was successfully set
-         */
-        set: (target, key, newValue) => {
-            let result = Reflect.set(target, key, newValue)
-            if (!this.#reAssigning) {
-                this.save()
-            }
-            return result
-        },
-    }
-
     /** Timestamp of the last save operation */
     #lastSaveTime: number = -1
 
@@ -192,6 +154,43 @@ export class Config<T extends object> {
      * In case of an error, it attempts to rename the old configuration file.
      */
     async load() {
+        let proxyHandler: ProxyHandler<T> = {
+            /**
+             * Intercepts `get` operations on the configuration object.
+             * If the requested property is an object, it wraps it in a Proxy for further nesting.
+             *
+             * @param target - The target configuration object
+             * @param key - The property key to access
+             * @returns The value of the property, wrapped in a Proxy if it is an object
+             */
+            get: (target, key) => {
+                if (key === "__isProxied") {
+                    return true
+                }
+                let ret = Reflect.get(target, key)
+                return typeof ret === "object"
+                    ? new Proxy(ret as object, proxyHandler)
+                    : ret
+            },
+
+            /**
+             * Intercepts `set` operations on the configuration object.
+             * Automatically saves the configuration after each update unless it is being reassigned during the `load` process.
+             *
+             * @param target - The target configuration object
+             * @param key - The property key to set
+             * @param newValue - The new value to assign
+             * @returns `true` if the property was successfully set
+             */
+            set: (target, key, newValue) => {
+                let result = Reflect.set(target, key, newValue)
+                if (!this.#reAssigning) {
+                    this.save()
+                }
+                return result
+            },
+        }
+
         if (await fs.pathExists(this.path)) {
             try {
                 let configData = await fs.readJSON(this.path, { throws: true })
@@ -203,7 +202,7 @@ export class Config<T extends object> {
                 }
                 this.config = new Proxy(
                     Object.assign({}, this.config, configData),
-                    this.#proxyHandler
+                    proxyHandler
                 )
             } catch {
                 console.warn("Occurred an error while initializing a Config.")
