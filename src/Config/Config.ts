@@ -70,19 +70,20 @@ export class Config<T extends object> {
      * @param config - The initial configuration object
      * @param watchFile - Whether to watch the config file for changes (default: false).
      *  If true, the file will be watched for changes and the configuration will be reloaded when the file is modified, added, or deleted.
-     * @param initManually - Whether to initialize the configuration manually or let the constructor do it (default: false).
-     * If you set this to true, you need to call the `init` method manually.
+     * @param afterInit - A callback function to be executed after the config is initialized
      */
     constructor(
         public readonly path: string,
         public config: T,
         public readonly watchFile: boolean = false,
-        initManually: boolean = false
+        afterInit: () => void = () => {}
     ) {
-        this.#defaultConfig = config
-        if (!initManually) {
-            this.init()
-        }
+        this.#defaultConfig = config;
+        (async () => {
+            
+            await this.init()
+            afterInit()
+        })()
     }
 
     /**
@@ -100,9 +101,11 @@ export class Config<T extends object> {
         config: T,
         watchFile = false
     ) {
-        let configInstance = new Config<T>(path, config, watchFile, true)
-        await configInstance.init()
-        return configInstance
+        return new Promise<Config<T>>((resolve, _) => {
+            let configInstance = new Config<T>(path, config, watchFile, () => {
+                resolve(configInstance)
+            })
+        })
     }
 
     /**
@@ -284,15 +287,15 @@ export class Language<T extends { [key: string]: string }> extends Config<T> {
      * @param path - The file path to the language file
      * @param watchFile - Whether to watch the language file for changes (default: false)
      * @param defaultValue - The default translations for the language
-     * @param initManually - Whether to initialize the language manually or let the constructor do it (default: false)
+     * @param afterInit - A callback function to be executed after the language is initialized
      */
     constructor(
         path: string,
         watchFile: boolean = false,
         defaultValue: T = {} as T,
-        initManually: boolean = false
+        afterInit: () => void = () => {}
     ) {
-        super(path, defaultValue, watchFile, initManually)
+        super(path, defaultValue, watchFile, afterInit)
     }
 
     /**
@@ -308,9 +311,11 @@ export class Language<T extends { [key: string]: string }> extends Config<T> {
         watchFile = false,
         defaultValue: T = {} as T
     ) {
-        let langInstance = new Language<T>(path, watchFile, defaultValue, true)
-        await langInstance.init()
-        return langInstance
+        return new Promise<Language<T>>((resolve, _) => {
+            let language = new Language<T>(path, watchFile, defaultValue, () => {
+                resolve(language)
+            })
+        })
     }
 
     /**
@@ -379,19 +384,19 @@ export class I18n<T extends { [key: string]: string }> {
      * @param localLangCode - The initial language code to use
      * @param watchFile - Whether to watch language files for changes (default: false)
      * @param defaultValue - The default language translations (default: empty object)
-     * @param initManually - Whether to initialize the `I18n` instance manually (default: false)
-     * @returns The initialized `I18n` instance
+     * @param afterInit - A callback function to be executed after the i18n is initialized
      */
     constructor(
         public readonly path: string,
         public localLangCode: string,
         public readonly watchFile: boolean = false,
         public readonly defaultValue: T = {} as T,
-        initManually: boolean = false
+        afterInit: () => void = () => {}
     ) {
-        if (!initManually) {
-            this.loadAllLanguages()
-        }
+        (async () => {
+            await this.loadAllLanguages()
+            afterInit()
+        })()
     }
 
     /**
@@ -409,15 +414,11 @@ export class I18n<T extends { [key: string]: string }> {
         watchFile: boolean = false,
         defaultValue: T = {} as T
     ) {
-        let i18nInstance = new I18n<T>(
-            path,
-            localLangCode,
-            watchFile,
-            defaultValue,
-            true
-        )
-        await i18nInstance.loadAllLanguages()
-        return i18nInstance
+        return new Promise<I18n<T>>((resolve, _) => {
+            let i18n = new I18n<T>(path, localLangCode, watchFile, defaultValue, () => {
+                resolve(i18n)
+            })
+        })
     }
 
     /**
