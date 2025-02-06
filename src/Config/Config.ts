@@ -331,9 +331,10 @@ export class Language<T extends { [key: string]: string }> extends Config<T> {
             return key
         }
         for (let i = 0; i < data.length; i++) {
-            let old = `{${data[i]}}`
+            let old = `{${i}}`
             result = result.split(old).join(data[i] as string)
         }
+        return result
     }
 }
 
