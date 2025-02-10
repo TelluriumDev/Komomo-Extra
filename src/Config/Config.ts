@@ -146,18 +146,15 @@ export class Config<T extends object> {
             })
             .on("change", (path, stats) => {
                 if ((stats as fs.Stats).mtime.getTime() > this.#lastSaveTime) {
-                    console.log("changed")
                     this.load()
                 }
             })
             .on("add", (path, stats) => {
                 if ((stats as fs.Stats).mtime.getTime() > this.#lastSaveTime) {
-                    console.log("added")
                     this.load()
                 }
             })
             .on("unlink", (path, stats) => {
-                console.log("deleted")
                 this.load()
             })
     }
