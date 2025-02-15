@@ -49,7 +49,7 @@
 //...
    "dependencies": [
          {
-            "name": "Komomo-Extra"
+            "name": "KomomoExtra"
       }
    ]
 //...

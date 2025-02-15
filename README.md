@@ -49,7 +49,7 @@ don't forget to add `KomomoExtra` to your `dependencies` in your `manifest.json`
 //...
    "dependencies": [
          {
-            "name": "Komomo-Extra"
+            "name": "KomomoExtra"
       }
    ]
 //...
