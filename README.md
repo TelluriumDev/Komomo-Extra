@@ -51,7 +51,7 @@ This library provides extra features for the LeviLamina JavaScript mod with Komo
 - Join this repository as a npm by running the following command in the terminal in your project directory:
 
    ```bash
-   npm i github.com/TelluriumDev/Komomo-Extra
+   npm i komomo-extra
    ```
 
 - then import it in your mod in a similar way:
@@ -69,6 +69,21 @@ This library provides extra features for the LeviLamina JavaScript mod with Komo
    to import specific functions.
 
 </details>
+
+don't forget to add `KomomoExtra` to your `dependencies` in your `manifest.json` to ensure it works properly:
+
+```jsonc
+{
+// manifest.json
+//...
+   "dependencies": [
+         {
+            "name": "Komomo-Extra"
+      }
+   ]
+//...
+}
+```
 
 ## Contact Us 📞
 

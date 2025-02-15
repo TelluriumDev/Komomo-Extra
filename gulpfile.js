@@ -5,7 +5,6 @@ import gulp from "gulp"
 import gts from "gulp-typescript"
 import greplace from "gulp-replace"
 import gzip from "gulp-zip"
-import compile from "gulp-typescript"
 
 const packageJson = fs.readJsonSync("package.json")
 const tsConfigJson = fs.readJsonSync("tsconfig.json")
