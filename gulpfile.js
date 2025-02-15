@@ -38,6 +38,10 @@ async function makeManifest() {
     }
     await fs.ensureDir(distDir)
     await fs.writeJSON(path.join(distDir, "manifest.json"), manifest, { spaces: 4 })
+}
+
+async function createPackageJson() {
+    await fs.ensureDir(distDir)
     const newPackageJson = Object.assign({}, packageJson)
     newPackageJson.devDependencies = {}
     await fs.writeJSON(path.join(distDir, "package.json"), newPackageJson, { spaces: 4 })
@@ -59,7 +63,8 @@ function packToZip() {
 
 const buildTask = gulp.series([
     compileTask,
-    removeLibInfo
+    removeLibInfo,
+    createPackageJson
 ])
 
 const packTask = gulp.series([

@@ -25,12 +25,17 @@ jobs:
                 npx gulp build
 
             - name: Publish to npm
-              run: npm publish
+              run: |
+                cp README.md ./dist/KomomoExtra/
+                cd ./dist/KomomoExtra
+                npm publish
               env: 
                 NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
 
             - name: Pack plugin
-              run: npx gulp pack
+              run: |
+                cd -
+                npx gulp pack
 
             - name: Read package.json
               uses: tyankatsu0105/read-package-version-actions@v1
@@ -67,6 +72,6 @@ jobs:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               with:
                   upload_url: ${{ steps.release_tag.outputs.upload_url }}
-                  asset_path: dist/KomomoExtra/KomomoExtra-${{ steps.package-version.outputs.version }}.zip
+                  asset_path: dist/KomomoExtra-${{ steps.package-version.outputs.version }}.zip
                   asset_name: KomomoExtra-${{ steps.package-version.outputs.version }}.zip
                   asset_content_type: application/zip
