@@ -33,9 +33,7 @@ jobs:
                 NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
 
             - name: Pack plugin
-              run: |
-                cd -
-                npx gulp pack
+              run: npx gulp pack
 
             - name: Read package.json
               uses: tyankatsu0105/read-package-version-actions@v1
