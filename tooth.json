@@ -17,8 +17,10 @@
         ]
     },
     "asset_url": "https://github.com/TelluriumDev/Komomo-Extra/releases/download/v1.0.0/KomomoExtra-1.0.0.zip",
+    "prerequisites": {
+        "github.com/LiteLDev/LeviLamina": "1.0.0-rc.3"
+    },
     "dependencies": {
-        "github.com/LiteLDev/LeviLamina": ">=0.11.1",
         "github.com/TelluriumDev/Komomo": ">=0.0.1"
     },
     "files": {
