@@ -8,10 +8,10 @@
         "description": "Extra Library for the LeviLamina JavaScript mod with Komomo",
         "author": "TelluriumDev",
         "tags": [
-            "leviLamina",
+            "levilamina",
             "komomo",
             "tellurium-dev",
-            "javascript",
+            "nodejs",
             "mod",
             "library"
         ]
