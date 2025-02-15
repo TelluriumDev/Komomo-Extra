@@ -4,6 +4,8 @@
 
 Extra Library for the LeviLamina JavaScript mod with Komomo
 
+English | [简体中文](https://github.com/TelluriumDev/Komomo-Extra/blob/main/docs/README-zh.md)
+
 ## Introduction 🚀
 
 This library provides extra features for the LeviLamina JavaScript mod with Komomo, such as:
