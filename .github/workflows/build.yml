@@ -1,0 +1,41 @@
+name: Build and Publish
+
+on:
+    push:
+        paths:
+            - package.json
+            - src/**
+            - .github/workflows/build.yml
+    pull_request:
+        paths:
+            - package.json
+            - src/**
+            - .github/workflows/build.yml
+
+jobs:
+    build-and-publish:
+        runs-on: ubuntu-latest
+        permissions: write-all
+
+        steps:
+            - uses: actions/checkout@v4
+            - name: Clone HelperLib
+              run: git clone https://github.com/TelluriumDev/KomomoHelperLib.git
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20.11.1
+                  registry-url: "https://registry.npmjs.org"
+
+            - name: Install dependencies and build
+              run: |
+                  npm i
+                  npx gulp build
+
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: KomomoExtra-ubuntu-latest-${{ github.sha }}
+                  include-hidden-files: true
+                  path: |
+                      dist/KomomoExtra/
