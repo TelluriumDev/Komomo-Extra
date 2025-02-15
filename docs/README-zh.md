@@ -41,6 +41,21 @@
 
    来导入特定的函数。
 
+别忘了在你的 `manifest.json` 中添加 `KomomoExtra` 以确保它正常工作：
+
+```jsonc
+{
+// manifest.json
+//...
+   "dependencies": [
+         {
+            "name": "Komomo-Extra"
+      }
+   ]
+//...
+}
+```
+
 </details>
 
 <details open>
@@ -69,21 +84,6 @@
    来导入特定的函数。
 
 </details>
-
-别忘了在你的 `manifest.json` 中添加 `KomomoExtra` 以确保它正常工作：
-
-```jsonc
-{
-// manifest.json
-//...
-   "dependencies": [
-         {
-            "name": "Komomo-Extra"
-      }
-   ]
-//...
-}
-```
 
 ## 联系我们 📞
 

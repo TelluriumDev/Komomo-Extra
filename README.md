@@ -41,6 +41,21 @@ This library provides extra features for the LeviLamina JavaScript mod with Komo
 
    to import specific functions.
 
+don't forget to add `KomomoExtra` to your `dependencies` in your `manifest.json` to ensure it works properly:
+
+```jsonc
+{
+// manifest.json
+//...
+   "dependencies": [
+         {
+            "name": "Komomo-Extra"
+      }
+   ]
+//...
+}
+```
+
 </details>
 
 <details open>
@@ -69,21 +84,6 @@ This library provides extra features for the LeviLamina JavaScript mod with Komo
    to import specific functions.
 
 </details>
-
-don't forget to add `KomomoExtra` to your `dependencies` in your `manifest.json` to ensure it works properly:
-
-```jsonc
-{
-// manifest.json
-//...
-   "dependencies": [
-         {
-            "name": "Komomo-Extra"
-      }
-   ]
-//...
-}
-```
 
 ## Contact Us 📞
 
