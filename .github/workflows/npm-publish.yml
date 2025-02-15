@@ -1,8 +1,6 @@
 name: Build and Publish
 
 on:
-    release:
-        types: [published]
     workflow_dispatch:
 
 jobs:
@@ -14,16 +12,61 @@ jobs:
             - uses: actions/checkout@v4
             - name: Clone HelperLib
               run: git clone https://github.com/TelluriumDev/KomomoHelperLib.git
+
             - name: Set up Node.js
               uses: actions/setup-node@v4
               with:
                 node-version: 20.11.1
                 registry-url: 'https://registry.npmjs.org'
+
             - name: Install dependencies and build
               run: |
                 npm i
-                npm run build
+                npx gulp build
+
             - name: Publish to npm
               run: npm publish
               env: 
                 NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+
+            - name: Pack plugin
+              run: npx gulp pack
+
+            - name: Read package.json
+              uses: tyankatsu0105/read-package-version-actions@v1
+              with:
+                  path: "./"
+              id: package-version
+
+            - name: Extract commit messages
+              id: extract-commits
+              run: |
+                git log --pretty=format:"%s" $(git describe --tags --abbrev=0 HEAD^)..HEAD > commit_messages.txt
+      
+            - name: Generate release body
+              id: generate-body
+              run: |
+                echo "## Changelog" > dist/KomomoExtra/body.md
+                cat commit_messages.txt >> dist/KomomoExtra/body.md
+
+            - name: Create Release
+              id: release_tag
+              uses: actions/create-release@v1
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  tag_name: v${{ steps.package-version.outputs.version }}
+                  release_name: v${{ steps.package-version.outputs.version }}
+                  draft: false
+                  prerelease: false
+                  body_path: dist/KomomoExtra/body.md
+
+            - name: Upload release asset
+              uses: actions/upload-release-asset@v1
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  upload_url: ${{ steps.release_tag.outputs.upload_url }}
+                  asset_path: dist/KomomoExtra/KomomoExtra-${{ steps.package-version.outputs.version }}.zip
+                  asset_name: KomomoExtra-${{ steps.package-version.outputs.version }}.zip
+                  asset_content_type: application/zip

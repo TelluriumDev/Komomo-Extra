@@ -1,4 +1,4 @@
-/// <reference path="../KomomoHelperLib/index.d.ts" />
+/// <reference path="../KomomoHelperLib/index.d.ts"/>
 
 export * from "./ConfigManager/Config.js"
 

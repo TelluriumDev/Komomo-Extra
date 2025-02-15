@@ -1,0 +1,32 @@
+{
+    "$schema": "https://raw.githubusercontent.com/lippkg/lip/main/schemas/tooth.v2.schema.json",
+    "format_version": 2,
+    "tooth": "github.com/TelluriumDev/Komomo-Extra",
+    "version": "1.0.0",
+    "info": {
+        "name": "KomomoExtra",
+        "description": "Extra Library for the LeviLamina JavaScript mod with Komomo",
+        "author": "TelluriumDev",
+        "tags": [
+            "LeviLamina",
+            "Komomo",
+            "TelluriumDev",
+            "JavaScript",
+            "Mod",
+            "Library"
+        ]
+    },
+    "asset_url": "https://github.com/TelluriumDev/Komomo-Extra/releases/download/v{version}/KomomoExtra-{version}.zip",
+    "dependencies": {
+        "github.com/LiteLDev/LeviLamina": ">=0.11.1",
+        "github.com/TelluriumDev/Komomo": ">=0.0.1"
+    },
+    "files": {
+        "place": [
+            {
+                "src": "KomomoExtra/*",
+                "dest": "plugins/KomomoExtra"
+            }
+        ]
+    }
+}
