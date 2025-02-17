@@ -75,7 +75,7 @@ jobs:
                   asset_content_type: application/zip
             - uses: actions/upload-artifact@v4
               with:
-                name: KomomoExtra-ubuntu-latest-full-${{ github.sha }}
+                name: KomomoExtra-ubuntu-latest-${{ github.sha }}
                 include-hidden-files: true
                 path: |
                   dist/KomomoExtra
