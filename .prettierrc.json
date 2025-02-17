@@ -5,7 +5,7 @@
     "semi": false,
     "singleQuote": false,
     "quoteProps": "as-needed",
-    "trailingComma": "es5",
+    "trailingComma": "none",
     "arrowParens": "always",
     "requirePragma": false,
     "insertPragma": false,

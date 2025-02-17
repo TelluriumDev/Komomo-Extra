@@ -1,5 +1,17 @@
 import * as chokidar from "chokidar"
 import fs from "fs-extra"
+import jsonc from "jsonc-parser"
+
+/**
+ * Parse the type of the key
+ */
+function getKey(target: any, key: string | symbol): jsonc.Segment {
+    if (Array.isArray(target)) {
+        const index = Number(key)
+        return Number.isInteger(index) && index >= 0 ? index : String(key)
+    }
+    return String(key)
+}
 
 /**
  * @template T type of config
@@ -7,10 +19,12 @@ import fs from "fs-extra"
  * @description
  * The `Config` class provides a way to read, write, and watch a configuration file.
  * It supports automatic reloading when the file is changed, as well as saving the
- * configuration back to the file whenever modifications are made.
+ * configuration back to the file whenever modifications are made. Also, it supports
+ * keep the comments in the config file but properly format it.
  *
  * `Config` 类提供了一种读取、写入和监听配置文件的方法。
  * 它支持在文件更改时自动重新加载，并且每当配置被修改时都会将配置保存回文件。
+ * 它还支持保留配置文件中的注释但正确格式化它们。
  *
  * This class uses a Proxy to enable reactive configuration updates and ensure
  * changes are automatically saved. It also watches the configuration file for changes
@@ -86,6 +100,18 @@ export class Config<T extends object> {
      */
     #defaultConfig: T
 
+    /** The current configuration object
+     *
+     * 当前配置对象
+     */
+    #config: T
+
+    /** The cached string representation of the configuration object
+     *
+     * 配置对象的缓存字符串表示
+     */
+    #configCache: string
+
     /**
      * Creates an instance of the Config class.
      * 创建 `Config` 类的实例。
@@ -99,11 +125,13 @@ export class Config<T extends object> {
      */
     constructor(
         public readonly path: string,
-        public config: T,
+        defaultConfig: T,
         public readonly watchFile: boolean = false,
         afterInit: () => void = () => {}
     ) {
-        this.#defaultConfig = config
+        this.#defaultConfig = Object.assign({}, defaultConfig)
+        this.#config = defaultConfig
+        this.#configCache = JSON.stringify(defaultConfig)
         ;(async () => {
             await this.init()
             afterInit()
@@ -123,9 +151,9 @@ export class Config<T extends object> {
                 alwaysStat: true,
                 awaitWriteFinish: {
                     stabilityThreshold: 500,
-                    pollInterval: 100,
+                    pollInterval: 100
                 },
-                ignoreInitial: true,
+                ignoreInitial: true
             })
             .on("change", (path, stats) => {
                 if ((stats as fs.Stats).mtime.getTime() > this.#lastSaveTime) {
@@ -163,62 +191,103 @@ export class Config<T extends object> {
      * 如果发生错误，它会尝试重命名旧的配置文件。
      */
     async load() {
-        let proxyHandler: ProxyHandler<T> = {
-            /**
-             * Intercepts get operations on the configuration object.
-             * If the requested property is an object, it wraps it in a Proxy for further nesting.
-             *
-             * 拦截对配置对象的 `get` 操作。如果请求的属性是一个对象，则将其包装在 Proxy 中以进一步嵌套。
-             *
-             * @param target - The target configuration object 目标配置对象
-             * @param key - The property key to access 要访问的属性键
-             * @returns The value of the property, wrapped in a Proxy if it is an object 返回属性值，如果是对象，则包装成 Proxy
-             */
-            get: (target, key) => {
-                if (key === "__isProxied") {
-                    return true
-                }
-                let ret = Reflect.get(target, key)
-                return typeof ret === "object"
-                    ? new Proxy(ret as object, proxyHandler)
-                    : ret
-            },
+        const createProxyHandler = <T extends object>(
+            path: jsonc.JSONPath = []
+        ): ProxyHandler<T> => {
+            return {
+                /**
+                 * Intercepts get operations on the configuration object.
+                 * If the requested property is an object, it wraps it in a Proxy for further nesting.
+                 *
+                 * 拦截对配置对象的 `get` 操作。如果请求的属性是一个对象，则将其包装在 Proxy 中以进一步嵌套。
+                 *
+                 * @param target - The target configuration object 目标配置对象
+                 * @param key - The property key to access 要访问的属性键
+                 * @returns The value of the property, wrapped in a Proxy if it is an object 返回属性值，如果是对象，则包装成 Proxy
+                 */
+                get: (target, key) => {
+                    if (key === "__isProxied") {
+                        return true
+                    }
+                    let ret = Reflect.get(target, key)
+                    return typeof ret === "object"
+                        ? new Proxy(
+                              ret as object,
+                              createProxyHandler([...path, getKey(target, key)])
+                          )
+                        : ret
+                },
 
-            /**
-             * Intercepts set operations on the configuration object.
-             * Automatically saves the configuration after each update unless it is being reassigned during the load process.
-             *
-             * 拦截对配置对象的 `set` 操作。每次更新后自动保存配置，除非在加载过程中重新赋值。
-             *
-             * @param target - The target configuration object 目标配置对象
-             * @param key - The property key to set 要设置的属性键
-             * @param newValue - The new value to assign 要赋值的新值
-             * @returns true if the property was successfully set 如果属性设置成功，则返回 `true`
-             */
-            set: (target, key, newValue) => {
-                let result = Reflect.set(target, key, newValue)
-                if (!this.#reAssigning) {
-                    this.save()
+                /**
+                 * Intercepts set operations on the configuration object.
+                 * Automatically saves the configuration after each update unless it is being reassigned during the load process.
+                 *
+                 * 拦截对配置对象的 `set` 操作。每次更新后自动保存配置，除非在加载过程中重新赋值。
+                 *
+                 * @param target - The target configuration object 目标配置对象
+                 * @param key - The property key to set 要设置的属性键
+                 * @param newValue - The new value to assign 要赋值的新值
+                 * @returns true if the property was successfully set 如果属性设置成功，则返回 `true`
+                 */
+                set: (target, key, newValue) => {
+                    let result = Reflect.set(target, key, newValue)
+                    let edits = jsonc.modify(
+                        this.#configCache,
+                        [...path, getKey(target, key)],
+                        newValue,
+                        {}
+                    )
+                    let editResult = jsonc.applyEdits(this.#configCache, edits)
+                    this.#configCache = editResult
+                    if (!this.#reAssigning) {
+                        this.save()
+                    }
+                    return result
                 }
-                return result
-            },
+            }
         }
 
         if (await fs.pathExists(this.path)) {
             try {
-                let configData = await fs.readJSON(this.path, { throws: true })
-                if ((this.config as any).__isProxied) {
-                    this.#reAssigning = true
-                    Object.assign(this.config, configData)
-                    this.#reAssigning = false
-                    return
-                }
-                this.config = new Proxy(
-                    Object.assign({}, this.config, configData),
-                    proxyHandler
+                let configStr = await fs.readFile(this.path, "utf-8")
+                let errs: jsonc.ParseError[] = []
+                let configData = jsonc.parse(
+                    configStr,
+                    errs,
+                    {
+                        disallowComments: false,
+                        allowTrailingComma: true,
+                        allowEmptyContent: false
+                    }                    
                 )
-            } catch {
-                console.warn("Occurred an error while initializing a Config.")
+                if (errs.length > 0) {
+                    throw new Error(
+                        "Occurred an error while parsing config file.",
+                        {
+                            cause: errs
+                        }
+                    )
+                }
+                if (configData != void 0) {
+                    this.#configCache = configStr
+                } else {
+                    configData = {}
+                    this.#configCache = "{}"
+                }
+                this.#reAssigning = true
+                if (!(this.#config as any).__isProxied) {
+                    // check if the config is loaded
+                    this.#config = new Proxy(this.#config, createProxyHandler())
+                    // still need to save if the config is empty or some properties are missing
+                }
+                Object.assign(this.#config, configData)
+                this.#reAssigning = false
+            } catch (e) {
+                console.warn(
+                    e instanceof Error
+                        ? e.message + (e.cause as any).toString()
+                        : "Occurred an error while initializing a Config."
+                )
                 let newPath = this.path + "_old"
                 await fs.rename(this.path, newPath)
             }
@@ -236,7 +305,13 @@ export class Config<T extends object> {
      * 格式化 json 时首行缩进的空格数（默认：4）
      */
     async save(indentation: number = 4) {
-        await fs.writeJSON(this.path, this.config, { spaces: indentation })
+        let edits = jsonc.format(this.#configCache, void 0, {
+            tabSize: indentation,
+            insertSpaces: true
+        })
+        let toWrite = jsonc.applyEdits(this.#configCache, edits)
+        this.#configCache = toWrite
+        await fs.writeFile(this.path, toWrite)
         this.#lastSaveTime = (await fs.stat(this.path)).mtime.getTime()
     }
 
@@ -250,7 +325,8 @@ export class Config<T extends object> {
             await this.#fileWatcher.close()
             this.#fileWatcher = undefined
         }
-        this.config = this.#defaultConfig as T
+        this.#config = this.#defaultConfig as T
+        this.#configCache = JSON.stringify(this.#defaultConfig)
     }
 
     /**
@@ -272,13 +348,13 @@ export class Config<T extends object> {
      * @returns 配置对象的代理
      */
     get() {
-        return new Proxy(this.config, {
+        return new Proxy(this.#config, {
             get: (target, key) => {
-                return Reflect.get(this.config, key)
+                return Reflect.get(this.#config, key)
             },
             set: (target, key, newValue) => {
-                return Reflect.set(this.config, key, newValue)
-            },
+                return Reflect.set(this.#config, key, newValue)
+            }
         })
     }
 }
