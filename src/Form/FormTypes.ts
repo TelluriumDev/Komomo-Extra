@@ -1,4 +1,4 @@
-import { ResultWrapper } from "./Result.js"
+import { ResultWrapper } from "./ResultWrapper.js"
 
 /**
  * represents the type of button image.

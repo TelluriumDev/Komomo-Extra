@@ -5,7 +5,7 @@ import {
     CustomFormComponentResultTypes
 } from "./FormTypes.js"
 
-import { ResultWrapper } from "./Result.js"
+import { ResultWrapper } from "./ResultWrapper.js"
 
 /**
  * A class that represents a form.
@@ -359,7 +359,7 @@ export class CustomFormEx extends FormEx<
                 this.getResult(player).then((value) => {
                     result = value[index].result
                 })
-                return { result }
+                return result
             }
         }
     }

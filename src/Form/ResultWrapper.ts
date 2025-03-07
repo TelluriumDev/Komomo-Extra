@@ -7,5 +7,5 @@ export interface ResultWrapper<T> {
      * @param player player
      *        - 玩家
      */
-    by(player: Player): Result<T>
+    by(player: Player): T | undefined
 }
