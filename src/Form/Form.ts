@@ -134,7 +134,7 @@ export class ModalFormEx extends FormEx<boolean> {
 
     /**
      * set the lower button of the form.
-     * - 设置表单的上方按钮。
+     * - 设置表单的下方按钮。
      * @param text the text of the button.
      *        - 按钮的文本。
      * @param callback the function called when the button clicked.
@@ -234,7 +234,7 @@ export class SimpleFormEx extends FormEx<number> {
 
     /**
      * adds buttons to the form if the condition is true.
-     *    - 添加按钮
+     *    - 添加多个按钮
      *
      * @param condition the condition.
      *        - 条件
@@ -701,7 +701,15 @@ export class CustomFormEx extends FormEx<
      */
     onResponse(
         callback: (
+            /**
+             * the player who submitted the form.
+             * - 提交表单的玩家。
+             */
             player: Player,
+            /**
+             * the result of the form.
+             * - 表单的结果。
+             */
             result: CustomFormComponent.AbstractComponent<CustomFormComponentResultTypes>[]
         ) => void
     ): this {
@@ -720,7 +728,15 @@ export class CustomFormEx extends FormEx<
      */
     onCancel(
         callback: (
+            /**
+             * the player who canceled the form.
+             * - 取消表单的玩家。
+             */
             player: Player,
+            /**
+             * the reason why the form was canceled.
+             * - 表单取消的原因.
+             */
             reason: FormEnum.ModalFormCancelReason
         ) => void
     ): this {

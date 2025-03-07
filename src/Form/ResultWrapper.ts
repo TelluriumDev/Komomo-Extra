@@ -1,4 +1,3 @@
-import { Result } from "./FormTypes.js"
 export interface ResultWrapper<T> {
     /**
      * Get the result of a player of the form.
