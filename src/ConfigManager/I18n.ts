@@ -64,7 +64,7 @@ export class Language<T extends { [key: string]: string }> extends Config<T> {
             return key
         }
         for (let i = 0; i < data.length; i++) {
-            let old = `{${i}}`
+            const old = `{${i}}`
             result = result.split(old).join(data[i] as string)
         }
         return result
@@ -91,7 +91,7 @@ export async function createLanguage<T extends { [key: string]: string }>(
     defaultValue: T = {} as T
 ) {
     return new Promise<Language<T>>((resolve, _) => {
-        let language = new Language<T>(path, watchFile, defaultValue, () => {
+        const language = new Language<T>(path, watchFile, defaultValue, () => {
             resolve(language)
         })
     })
@@ -165,7 +165,7 @@ export class I18n<T extends { [key: string]: string }> {
      * @param path - The directory path where language files are stored 语言文件存储的目录路径
      * @param localLangCode - The initial language code to use 初始语言代码
      * @param watchFile - Whether to watch language files for changes (default: false) 是否监听语言文件变化（默认值：false）
-     *  If true, the files will be watched for changes and the language files will be reloaded when modified, added, or deleted.
+     *  If true, the files will be watched for changes and the language files will be reloaded when modified, added, or deconsted.
      *  如果为 true，文件将被监听，当文件被修改、添加或删除时，语言文件将被重新加载。
      * @param defaultValue - The default language translations (default: empty object) 默认语言翻译（默认值：空对象）
      * @param afterInit - A callback function to be executed after the i18n is initialized 在 i18n 初始化后执行的回调函数
@@ -188,8 +188,8 @@ export class I18n<T extends { [key: string]: string }> {
      * 从指定目录加载所有语言文件，并将它们添加到语言映射中。
      */
     async loadAllLanguages() {
-        let langFiles = await fs.readdir(this.path)
-        for (let langFile of langFiles) {
+        const langFiles = await fs.readdir(this.path)
+        for (const langFile of langFiles) {
             await this.loadLanguage(path.parse(langFile).name)
         }
     }
@@ -253,7 +253,7 @@ export class I18n<T extends { [key: string]: string }> {
      * 如果语言代码不存在则抛出错误
      */
     get(langCode?: string) {
-        let lang = this.#languages.get(langCode || this.localLangCode)
+        const lang = this.#languages.get(langCode || this.localLangCode)
         if (!lang) {
             throw new Error(
                 `Language '${lang}' not found. Please load it first.`
@@ -274,7 +274,7 @@ export class I18n<T extends { [key: string]: string }> {
      * 如果语言代码不存在则抛出错误
      */
     translate(key: keyof T, data: any[], langCode?: string) {
-        let lang = langCode || this.localLangCode
+        const lang = langCode || this.localLangCode
         if (!this.#languages.has(lang)) {
             return key
         }
@@ -288,7 +288,7 @@ export class I18n<T extends { [key: string]: string }> {
      * @param langCode - The language code to unload 要卸载的语言代码
      */
     async unloadLanguage(langCode: string) {
-        let lang = this.#languages.get(langCode)
+        const lang = this.#languages.get(langCode)
         if (lang) {
             await lang.unload()
             this.#languages.delete(langCode)
@@ -314,7 +314,7 @@ export class I18n<T extends { [key: string]: string }> {
      * 重新加载所有语言并更新它们的翻译。
      */
     async reloadAllLanguages() {
-        for (let lang of this.#languages.keys()) {
+        for (const lang of this.#languages.keys()) {
             await this.reloadLanguage(lang)
         }
     }
@@ -328,7 +328,7 @@ export class I18n<T extends { [key: string]: string }> {
  * @param path - The directory path where language files are stored 语言文件存储的目录路径
  * @param localLangCode - The initial language code to use 初始语言代码
  * @param watchFile - Whether to watch language files for changes (default: false) 是否监听语言文件变化（默认值：false）
- *  If true, the files will be watched for changes and the language files will be reloaded when modified, added, or deleted.
+ *  If true, the files will be watched for changes and the language files will be reloaded when modified, added, or deconsted.
  *  如果为 true，文件将被监听，当文件被修改、添加或删除时，语言文件将被重新加载。
  * @param defaultValue - The default language translations (default: empty object) 默认语言翻译（默认值：空对象）
  * @param afterInit - A callback function to be executed after the i18n is initialized 在 i18n 初始化后执行的回调函数
@@ -341,7 +341,7 @@ export async function createI18n<T extends { [key: string]: string }>(
     defaultValue: T = {} as T
 ) {
     return new Promise<I18n<T>>((resolve, _) => {
-        let i18n = new I18n<T>(
+        const i18n = new I18n<T>(
             path,
             localLangCode,
             watchFile,

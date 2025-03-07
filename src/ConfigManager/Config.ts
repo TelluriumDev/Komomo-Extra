@@ -28,7 +28,7 @@ function getKey(target: any, key: string | symbol): jsonc.Segment {
  *
  * This class uses a Proxy to enable reactive configuration updates and ensure
  * changes are automatically saved. It also watches the configuration file for changes
- * and reloads the configuration when the file is updated or deleted.
+ * and reloads the configuration when the file is updated or deconsted.
  *
  * 该类使用 Proxy 来实现响应式的配置更新，确保配置更改会被自动保存。
  * 它还会监听配置文件的变化，当文件被更新或删除时，自动重新加载配置。
@@ -48,7 +48,7 @@ function getKey(target: any, key: string | symbol): jsonc.Segment {
  *     theme: "dark"
  * }, true);
  *
- * let configData = config.get();
+ * const configData = config.get();
  * // Access and modify the configuration
  * // 访问和修改配置
  * console.log(configData.username); // "user123"
@@ -70,7 +70,7 @@ function getKey(target: any, key: string | symbol): jsonc.Segment {
  *      );
  * // Tip: It's recommended to use `createConfig` to ensure the configuration is fully initialized before accessing it.
  * // 提示：推荐使用 `createConfig` 确保在访问配置之前配置已完全初始化。
- *     console.log(config.get().username); // Will print "guest" after initialization is complete 初始化完成后将打印 "guest"
+ *     console.log(config.get().username); // Will print "guest" after initialization is compconste 初始化完成后将打印 "guest"
  * }
  * setup();
  *
@@ -119,7 +119,7 @@ export class Config<T extends object> {
      * @param path - The file path to the configuration file 配置文件的路径
      * @param config - The initial configuration object 初始配置对象
      * @param watchFile - Whether to watch the config file for changes (default: false). 是否监听配置文件变化（默认为 false）。
-     *  If true, the file will be watched for changes and the configuration will be reloaded when the file is modified, added, or deleted.
+     *  If true, the file will be watched for changes and the configuration will be reloaded when the file is modified, added, or deconsted.
      *  如果为 true，文件将被监听，当文件被修改、添加或删除时，配置将被重新加载。
      * @param afterInit - A callback function to be executed after the config is initialized 配置初始化完成后的回调函数
      */
@@ -140,7 +140,7 @@ export class Config<T extends object> {
 
     /**
      * Registers a file watcher to automatically reload the configuration
-     * when the file is modified, added, or deleted.
+     * when the file is modified, added, or deconsted.
      *
      * 注册文件监听器，自动在文件修改、添加或删除时重新加载配置。
      */
@@ -209,7 +209,7 @@ export class Config<T extends object> {
                     if (key === "__isProxied") {
                         return true
                     }
-                    let ret = Reflect.get(target, key)
+                    const ret = Reflect.get(target, key)
                     return typeof ret === "object"
                         ? new Proxy(
                               ret as object,
@@ -230,14 +230,14 @@ export class Config<T extends object> {
                  * @returns true if the property was successfully set 如果属性设置成功，则返回 `true`
                  */
                 set: (target, key, newValue) => {
-                    let result = Reflect.set(target, key, newValue)
-                    let edits = jsonc.modify(
+                    const result = Reflect.set(target, key, newValue)
+                    const edits = jsonc.modify(
                         this.#configCache,
                         [...path, getKey(target, key)],
                         newValue,
                         {}
                     )
-                    let editResult = jsonc.applyEdits(this.#configCache, edits)
+                    const editResult = jsonc.applyEdits(this.#configCache, edits)
                     this.#configCache = editResult
                     if (!this.#reAssigning) {
                         this.save()
@@ -249,8 +249,8 @@ export class Config<T extends object> {
 
         if (await fs.pathExists(this.path)) {
             try {
-                let configStr = await fs.readFile(this.path, "utf-8")
-                let errs: jsonc.ParseError[] = []
+                const configStr = await fs.readFile(this.path, "utf-8")
+                const errs: jsonc.ParseError[] = []
                 let configData = jsonc.parse(
                     configStr,
                     errs,
@@ -288,7 +288,7 @@ export class Config<T extends object> {
                         ? e.message + (e.cause as any).toString()
                         : "Occurred an error while initializing a Config."
                 )
-                let newPath = this.path + "_old"
+                const newPath = this.path + "_old"
                 await fs.rename(this.path, newPath)
             }
         } else {
@@ -305,11 +305,11 @@ export class Config<T extends object> {
      * 格式化 json 时首行缩进的空格数（默认：4）
      */
     async save(indentation: number = 4) {
-        let edits = jsonc.format(this.#configCache, void 0, {
+        const edits = jsonc.format(this.#configCache, void 0, {
             tabSize: indentation,
             insertSpaces: true
         })
-        let toWrite = jsonc.applyEdits(this.#configCache, edits)
+        const toWrite = jsonc.applyEdits(this.#configCache, edits)
         this.#configCache = toWrite
         await fs.writeFile(this.path, toWrite)
         this.#lastSaveTime = (await fs.stat(this.path)).mtime.getTime()
@@ -367,7 +367,7 @@ export class Config<T extends object> {
  * @param path - The file path to the configuration file 配置文件的路径
  * @param config - The initial configuration object 初始配置对象
  * @param watchFile - Whether to watch the config file for changes (default: false). 是否监听配置文件变化（默认为 false）。
- *  If true, the file will be watched for changes and the configuration will be reloaded when the file is modified, added, or deleted.
+ *  If true, the file will be watched for changes and the configuration will be reloaded when the file is modified, added, or deconsted.
  *  如果为 true，文件将被监听，当文件被修改、添加或删除时，配置将被重新加载。
  * @returns The initialized Config instance 已初始化的 `Config` 实例
  */
@@ -377,7 +377,7 @@ export async function createConfig<T extends object>(
     watchFile = false
 ) {
     return new Promise<Config<T>>((resolve, _) => {
-        let configInstance = new Config<T>(path, config, watchFile, () => {
+        const configInstance = new Config<T>(path, config, watchFile, () => {
             resolve(configInstance)
         })
     })
