@@ -6,5 +6,5 @@ export interface ResultWrapper<T> {
      * @param player player
      *        - 玩家
      */
-    by(player: Player): T | undefined
+    by(player: Player): Promise<T | undefined>
 }

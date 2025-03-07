@@ -354,12 +354,9 @@ export class CustomFormEx extends FormEx<
 
     #getResultWrapper<T>(index: number): ResultWrapper<T> {
         return {
-            by: (player: Player) => {
-                let result
-                this.getResult(player).then((value) => {
-                    result = value[index].result
-                })
-                return result
+            by: async (player: Player) => {
+                const result = await this.getResult(player)
+                return result[index].result as T
             }
         }
     }
@@ -588,10 +585,14 @@ export class CustomFormEx extends FormEx<
      *     desc.label("Label")
      *     const input = desc.input("Input", "Placeholder")
      *     const toggle = desc.toggle("Toggle")
-     *     onResponse((player) => {
-     *         console.log("input: " + input.valueOf() + " toggle: " +  toggle.valueOf())
+     *     onResponse(async (player) => {
+     *         console.log("input: " + await input.by(player) + " toggle: " + await toggle.by(player))
      *     })
      * })
+     * ```
+     * 受限于 JS 的异步处理机制，
+     * 以及尽量不对引擎进行侵入性操作的原则，
+     * 你需要在 `onResponse` 中使用 `await` 来获取结果。
      */
     describe(block: (description: CustomFormDescription) => void): this {
         const desc: CustomFormDescription = {
