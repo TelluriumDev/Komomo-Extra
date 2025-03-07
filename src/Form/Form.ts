@@ -593,6 +593,10 @@ export class CustomFormEx extends FormEx<
      * 受限于 JS 的异步处理机制，
      * 以及尽量不对引擎进行侵入性操作的原则，
      * 你需要在 `onResponse` 中使用 `await` 来获取结果。
+     * 
+     * Considering the limitations of JS's asynchronous processing mechanism,
+     * and the principle of not intruding into the engine,
+     * you need to avoid the need to use `await` in `onResponse`.
      */
     describe(block: (description: CustomFormDescription) => void): this {
         const desc: CustomFormDescription = {
