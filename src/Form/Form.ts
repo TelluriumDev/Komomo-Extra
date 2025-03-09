@@ -1,3 +1,4 @@
+import { delay } from "../utils/Utils.js"
 import {
     SimpleFormImageType,
     CustomFormComponent,
@@ -88,8 +89,13 @@ export class ModalFormEx extends FormEx<boolean> {
     }
 
     override send(player: Player): void {
+        if (!(player instanceof Player)) {
+            throw new TypeError(
+                "ModalFormEx.send only accepts a player instance."
+            )
+        }
         const promise = new Promise<boolean>((resolve, reject) => {
-            this.#form.sendTo(player, (_, result) => {
+            const success = this.#form.sendTo(player, (_, result) => {
                 if (Number.isInteger(result)) {
                     // Cancelled
                     reject(result as FormEnum.ModalFormCancelReason)
@@ -97,6 +103,9 @@ export class ModalFormEx extends FormEx<boolean> {
                 }
                 resolve(Promise.resolve(result as boolean))
             })
+            if (!success) {
+                reject(new Error("Failed to send form to player."))
+            }
         })
         promise
             .then((result) => {
@@ -258,8 +267,11 @@ export class SimpleFormEx extends FormEx<number> {
         return this
     }
     override send(player: Player): void {
+        if (!(player instanceof Player)) {
+            throw new Error("SimpleFormEx.send only accepts a player instance.")
+        }
         const promise = new Promise<number>((resolve, reject) => {
-            this.#form.sendTo(player, (_player, id, reason) => {
+            const success = this.#form.sendTo(player, (_player, id, reason) => {
                 if (reason) {
                     // Cancelled
                     reject(reason as FormEnum.ModalFormCancelReason)
@@ -272,6 +284,9 @@ export class SimpleFormEx extends FormEx<number> {
                     resolve(id)
                 }
             })
+            if (!success) {
+                reject(new Error("Failed to send form to player."))
+            }
         })
         promise.then((_) => {}).catch((_) => {})
         this.#resultList.set(player.uuid, promise)
@@ -305,9 +320,10 @@ export class SimpleFormEx extends FormEx<number> {
     }
 }
 
-export class CustomFormEx extends FormEx<
-    CustomFormComponent.AbstractComponent<CustomFormComponentResultTypes>[]
-> {
+export class CustomFormEx<
+    T extends
+        CustomFormComponent.AbstractComponent<CustomFormComponentResultTypes>[] = []
+> extends FormEx<T> {
     constructor(title: string) {
         super(title)
         this.#form = Form.newCustomForm(title)
@@ -322,12 +338,7 @@ export class CustomFormEx extends FormEx<
      * @type {Map<string, Promise<CustomFormComponent.AbstractComponent<CustomFormComponentResultTypes>[]>>}
      * 键为玩家的 uuid，值为玩家相应的 Promise.
      */
-    #resultList: Map<
-        string,
-        Promise<
-            CustomFormComponent.AbstractComponent<CustomFormComponentResultTypes>[]
-        >
-    > = new Map()
+    #resultList: Map<string, Promise<T>> = new Map()
 
     #responseCallbacks: ((
         player: Player,
@@ -362,10 +373,16 @@ export class CustomFormEx extends FormEx<
     }
 
     override send(player: Player): void {
+        if (!(player instanceof Player)) {
+            throw new TypeError(
+                "CustomFormEx.send only accepts a player instance."
+            )
+        }
         const promise = new Promise<
             CustomFormComponent.AbstractComponent<CustomFormComponentResultTypes>[]
-        >((resolve, reject) => {
-            this.#form.sendTo(player, (_player, result) => {
+        >(async (resolve, reject) => {
+            await delay(0)
+            let success = this.#form.sendTo(player, (_player, result) => {
                 if (Number.isInteger(result)) {
                     // Cancelled
                     reject(result)
@@ -395,16 +412,15 @@ export class CustomFormEx extends FormEx<
                     callback(_player, true)
                 }
             })
+            if (!success) {
+                reject(new Error("Failed to send form."))
+            }
         })
         promise.then((_) => {}).catch((_) => {})
-        this.#resultList.set(player.uuid, promise)
+        this.#resultList.set(player.uuid, promise as Promise<T>)
     }
 
-    override async getResult(
-        player: Player
-    ): Promise<
-        CustomFormComponent.AbstractComponent<CustomFormComponentResultTypes>[]
-    > {
+    override async getResult(player: Player): Promise<T> {
         if (!this.#resultList.has(player.uuid)) {
             throw new Error(
                 "CustomFormEx.getResult called before CustomFormEx.sendTo"
@@ -420,14 +436,15 @@ export class CustomFormEx extends FormEx<
      * - 标签的文本。
      * @returns `this` The form itself
      */
-    addLabel(text: string): this {
-        const label: CustomFormComponent.Label = {
+    addLabel<Text extends string>(text: Text) {
+        const label: CustomFormComponent.Label & { text: Text } = {
             type: "label",
-            text
+            text,
+            result: undefined
         }
         this.#components.push(label)
         this.#form.appendLabel(text)
-        return this
+        return this as unknown as CustomFormEx<[...T, typeof label]>
     }
 
     /**
@@ -593,7 +610,7 @@ export class CustomFormEx extends FormEx<
      * 受限于 JS 的异步处理机制，
      * 以及尽量不对引擎进行侵入性操作的原则，
      * 你需要在 `onResponse` 中使用 `await` 来获取结果。
-     * 
+     *
      * Considering the limitations of JS's asynchronous processing mechanism,
      * and the principle of not intruding into the engine,
      * you need to avoid the need to use `await` in `onResponse`.
