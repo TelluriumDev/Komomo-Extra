@@ -237,7 +237,10 @@ export class Config<T extends object> {
                         newValue,
                         {}
                     )
-                    const editResult = jsonc.applyEdits(this.#configCache, edits)
+                    const editResult = jsonc.applyEdits(
+                        this.#configCache,
+                        edits
+                    )
                     this.#configCache = editResult
                     if (!this.#reAssigning) {
                         this.save()
@@ -251,15 +254,11 @@ export class Config<T extends object> {
             try {
                 const configStr = await fs.readFile(this.path, "utf-8")
                 const errs: jsonc.ParseError[] = []
-                let configData = jsonc.parse(
-                    configStr,
-                    errs,
-                    {
-                        disallowComments: false,
-                        allowTrailingComma: true,
-                        allowEmptyContent: false
-                    }                    
-                )
+                let configData = jsonc.parse(configStr, errs, {
+                    disallowComments: false,
+                    allowTrailingComma: true,
+                    allowEmptyContent: false
+                })
                 if (errs.length > 0) {
                     throw new Error(
                         "Occurred an error while parsing config file.",

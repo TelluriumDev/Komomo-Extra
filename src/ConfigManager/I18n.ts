@@ -63,9 +63,9 @@ export class Language<T extends { [key: string]: string }> extends Config<T> {
         if (!result) {
             return key
         }
-        for (let i = 0; i < data.length; i++) {
-            const old = `{${i}}`
-            result = result.split(old).join(data[i] as string)
+        for (const [index, value] of data.entries()) {
+            const old = `{${index}}`
+            result = result.split(old).join(value.toString())
         }
         return result
     }
@@ -73,7 +73,7 @@ export class Language<T extends { [key: string]: string }> extends Config<T> {
 
 /**
  * Creates an instance of the `Language` class and initializes it automatically.
- * 
+ *
  * 创建并自动初始化 `Language` 类的实例。
  *
  * @param path - The file path to the language file
@@ -297,7 +297,7 @@ export class I18n<T extends { [key: string]: string }> {
 
     /**
      * Reloads the specified language and updates its translations.
-     * 
+     *
      * 重新加载指定的语言并更新其翻译。
      *
      * @param langCode - The language code to reload
@@ -310,7 +310,7 @@ export class I18n<T extends { [key: string]: string }> {
 
     /**
      * Reloads all languages and updates their translations.
-     * 
+     *
      * 重新加载所有语言并更新它们的翻译。
      */
     async reloadAllLanguages() {
@@ -322,7 +322,7 @@ export class I18n<T extends { [key: string]: string }> {
 
 /**
  * Creates an instance of the `I18n` class and initializes it automatically.
- * 
+ *
  * 创建并自动初始化 `I18n` 类的实例。
  *
  * @param path - The directory path where language files are stored 语言文件存储的目录路径

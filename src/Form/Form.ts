@@ -320,10 +320,9 @@ export class SimpleFormEx extends FormEx<number> {
     }
 }
 
-export class CustomFormEx<
-    T extends
-        CustomFormComponent.AbstractComponent<CustomFormComponentResultTypes>[] = []
-> extends FormEx<T> {
+export class CustomFormEx extends FormEx<
+    CustomFormComponent.AbstractComponent<CustomFormComponentResultTypes>[]
+> {
     constructor(title: string) {
         super(title)
         this.#form = Form.newCustomForm(title)
@@ -338,7 +337,12 @@ export class CustomFormEx<
      * @type {Map<string, Promise<CustomFormComponent.AbstractComponent<CustomFormComponentResultTypes>[]>>}
      * 键为玩家的 uuid，值为玩家相应的 Promise.
      */
-    #resultList: Map<string, Promise<T>> = new Map()
+    #resultList: Map<
+        string,
+        Promise<
+            CustomFormComponent.AbstractComponent<CustomFormComponentResultTypes>[]
+        >
+    > = new Map()
 
     #responseCallbacks: ((
         player: Player,
@@ -398,14 +402,12 @@ export class CustomFormEx<
 
                 const values: CustomFormComponent.AbstractComponent<CustomFormComponentResultTypes>[] =
                     []
-                for (let index = 0; index < this.#components.length; index++) {
-                    const key = this.#getComponentKey(
-                        this.#components[index],
-                        index
-                    )
-                    const toCopy = Object.assign({}, this.#components[index])
-                    values[index] = toCopy
-                    values[index].result = (result as Record<string, any>)[key]
+                for (const [index, value] of this.#components.entries()) {
+                    const key = this.#getComponentKey(value, index)
+                    values[index] = {
+                        ...value,
+                        result: (result as Record<string, any>)[key]
+                    }
                 }
                 resolve(values)
                 for (const callback of this.#responseCallbacks) {
@@ -417,10 +419,19 @@ export class CustomFormEx<
             }
         })
         promise.then((_) => {}).catch((_) => {})
-        this.#resultList.set(player.uuid, promise as Promise<T>)
+        this.#resultList.set(
+            player.uuid,
+            promise as Promise<
+                CustomFormComponent.AbstractComponent<CustomFormComponentResultTypes>[]
+            >
+        )
     }
 
-    override async getResult(player: Player): Promise<T> {
+    override async getResult(
+        player: Player
+    ): Promise<
+        CustomFormComponent.AbstractComponent<CustomFormComponentResultTypes>[]
+    > {
         if (!this.#resultList.has(player.uuid)) {
             throw new Error(
                 "CustomFormEx.getResult called before CustomFormEx.sendTo"
@@ -436,7 +447,7 @@ export class CustomFormEx<
      * - 标签的文本。
      * @returns `this` The form itself
      */
-    addLabel<Text extends string>(text: Text) {
+    addLabel<Text extends string>(text: Text): this {
         const label: CustomFormComponent.Label & { text: Text } = {
             type: "label",
             text,
@@ -444,7 +455,7 @@ export class CustomFormEx<
         }
         this.#components.push(label)
         this.#form.appendLabel(text)
-        return this as unknown as CustomFormEx<[...T, typeof label]>
+        return this
     }
 
     /**
