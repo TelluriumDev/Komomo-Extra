@@ -1,7 +1,8 @@
 import * as chokidar from "chokidar"
 import fs from "fs-extra"
 import jsonc from "jsonc-parser"
-
+import { JsoncSyntaxError } from "./ParseError.js"
+import { IndexOutOfBoundsError } from "../Utils/Errors.js"
 /**
  * Parse the type of the key
  */
@@ -11,6 +12,30 @@ function getKey(target: any, key: string | symbol): jsonc.Segment {
         return Number.isInteger(index) && index >= 0 ? index : String(key)
     }
     return String(key)
+}
+
+function getLineAndColumnNumber(str: string, index: number) {
+    const lines = str.split("\n")
+    let totalLength = 0
+    for (let i = 0; i < lines.length; i++) {
+        totalLength += lines[i].length + 1
+        if (totalLength > index) {
+            return {
+                line: i + 1,
+                column: index - totalLength
+            }
+        }
+    }
+    throw new IndexOutOfBoundsError(
+        "Internal error: Invalid index in getLineAndColumnNumber",
+        {
+            cause: {
+                str,
+                index
+            },
+            errors: [RangeError]
+        }
+    )
 }
 
 /**
@@ -259,11 +284,21 @@ export class Config<T extends object> {
                     allowTrailingComma: true,
                     allowEmptyContent: false
                 })
+                const errsToShow = errs.map((err) => {
+                    const info = {
+                        code: jsonc.printParseErrorCode(err.error),
+                        at: getLineAndColumnNumber(configStr, err.offset),
+                        toString() {
+                            return JSON.stringify(info, null, 4)
+                        }
+                    }
+                    return info
+                })
                 if (errs.length > 0) {
-                    throw new Error(
-                        "Occurred an error while parsing config file.",
+                    throw new JsoncSyntaxError(
+                        "Occurred some errors while parsing a json file.",
                         {
-                            cause: errs
+                            cause: errsToShow
                         }
                     )
                 }

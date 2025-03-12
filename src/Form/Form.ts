@@ -1,4 +1,4 @@
-import { delay } from "../utils/Utils.js"
+import { delay } from "../Utils/Utils.js"
 import {
     SimpleFormImageType,
     CustomFormComponent,
@@ -7,6 +7,8 @@ import {
 } from "./FormTypes.js"
 
 import { ResultWrapper } from "./ResultWrapper.js"
+import { UnsentFormError } from "./FormError.js"
+import { IllegalArgumentError } from "../Utils/Errors.js"
 
 /**
  * A class that represents a form.
@@ -81,8 +83,8 @@ export class ModalFormEx extends FormEx<boolean> {
 
     override async getResult(player: Player): Promise<boolean> {
         if (!this.#resultList.has(player.uuid)) {
-            throw new Error(
-                "ModalFormEx.getResult called before ModalFormEx.sendTo"
+            throw new UnsentFormError(
+                `The modal form '${this.title}' has not been sent to the player: ${player.realName}`
             )
         }
         return this.#resultList.get(player.uuid)!
@@ -104,7 +106,15 @@ export class ModalFormEx extends FormEx<boolean> {
                 resolve(Promise.resolve(result as boolean))
             })
             if (!success) {
-                reject(new Error("Failed to send form to player."))
+                reject(
+                    new IllegalArgumentError(
+                        "Failed to send the form, because the argument passed is not a valid Player object.",
+                        {
+                            errors: [TypeError],
+                            cause: player
+                        }
+                    )
+                )
             }
         })
         promise
@@ -310,10 +320,10 @@ export class SimpleFormEx extends FormEx<number> {
         return this
     }
 
-    async getResult(player: Player): Promise<number> {
+    override async getResult(player: Player): Promise<number> {
         if (!this.#resultList.has(player.uuid)) {
-            throw new Error(
-                "SimpleFormEx.getResult called before SimpleFormEx.sendTo"
+            throw new UnsentFormError(
+                `The simple form '${this.title}' has not been sent to the player: ${player.realName}`
             )
         }
         return this.#resultList.get(player.uuid)!
@@ -415,7 +425,11 @@ export class CustomFormEx extends FormEx<
                 }
             })
             if (!success) {
-                reject(new Error("Failed to send form."))
+                reject(
+                    new IllegalArgumentError(
+                        "Failed to send form, because the argument passed is not a valid player."
+                    )
+                )
             }
         })
         promise.then((_) => {}).catch((_) => {})
@@ -433,8 +447,8 @@ export class CustomFormEx extends FormEx<
         CustomFormComponent.AbstractComponent<CustomFormComponentResultTypes>[]
     > {
         if (!this.#resultList.has(player.uuid)) {
-            throw new Error(
-                "CustomFormEx.getResult called before CustomFormEx.sendTo"
+            throw new UnsentFormError(
+                `The custom form '${this.title}' has not been sent to the player: ${player.realName}`
             )
         }
         return this.#resultList.get(player.uuid)!

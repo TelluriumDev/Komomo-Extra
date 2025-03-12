@@ -32,7 +32,9 @@
         "chokidar": "^4.0.3",
         "fs-extra": "^11.3.0",
         "jsonc-parser": "^3.3.1",
-        "komomo-extra": "file:"
+        "komomo-extra": "file:",
+        "modern-errors": "^7.0.1",
+        "modern-errors-clean": "^6.0.0"
     },
     "devDependencies": {
         "gulp": "^5.0.0",
