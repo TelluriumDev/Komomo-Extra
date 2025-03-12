@@ -29,11 +29,10 @@ function getLineAndColumnNumber(str: string, index: number) {
     throw new IndexOutOfBoundsError(
         "Internal error: Invalid index in getLineAndColumnNumber",
         {
-            cause: {
+            causedBy: {
                 str,
                 index
-            },
-            errors: [RangeError]
+            }
         }
     )
 }
@@ -298,7 +297,7 @@ export class Config<T extends object> {
                     throw new JsoncSyntaxError(
                         "Occurred some errors while parsing a json file.",
                         {
-                            cause: errsToShow
+                            causedBy: errsToShow
                         }
                     )
                 }

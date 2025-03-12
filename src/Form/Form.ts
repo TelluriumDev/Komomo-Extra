@@ -92,8 +92,11 @@ export class ModalFormEx extends FormEx<boolean> {
 
     override send(player: Player): void {
         if (!(player instanceof Player)) {
-            throw new TypeError(
-                "ModalFormEx.send only accepts a player instance."
+            throw new IllegalArgumentError(
+                "ModalFormEx.send expects a player instance as an argument, but got something else.",
+                {
+                    causedBy: player
+                }
             )
         }
         const promise = new Promise<boolean>((resolve, reject) => {
@@ -110,8 +113,7 @@ export class ModalFormEx extends FormEx<boolean> {
                     new IllegalArgumentError(
                         "Failed to send the form, because the argument passed is not a valid Player object.",
                         {
-                            errors: [TypeError],
-                            cause: player
+                            causedBy: player
                         }
                     )
                 )
@@ -278,7 +280,12 @@ export class SimpleFormEx extends FormEx<number> {
     }
     override send(player: Player): void {
         if (!(player instanceof Player)) {
-            throw new Error("SimpleFormEx.send only accepts a player instance.")
+            throw new IllegalArgumentError(
+                "SimpleFormEx.send expects a player instance as an argument, but got something else.",
+                {
+                    causedBy: player
+                }
+            )
         }
         const promise = new Promise<number>((resolve, reject) => {
             const success = this.#form.sendTo(player, (_player, id, reason) => {
@@ -388,8 +395,11 @@ export class CustomFormEx extends FormEx<
 
     override send(player: Player): void {
         if (!(player instanceof Player)) {
-            throw new TypeError(
-                "CustomFormEx.send only accepts a player instance."
+            throw new IllegalArgumentError(
+                "CustomFormEx.send expects a player instance as an argument, but got something else.",
+                {
+                    causedBy: player
+                }
             )
         }
         const promise = new Promise<
