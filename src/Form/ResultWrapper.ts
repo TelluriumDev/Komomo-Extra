@@ -1,4 +1,4 @@
-export interface ResultWrapper<T> {
+export type ResultWrapper<T> = {
     /**
      * Get the result of a player of the form.
      * - 获取对应玩家的表单结果。

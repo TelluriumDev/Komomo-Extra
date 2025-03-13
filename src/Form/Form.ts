@@ -1,6 +1,6 @@
 import { delay } from "../Utils/Utils.js"
 import {
-    SimpleFormImageType,
+    SimpleFormImage,
     CustomFormComponent,
     CustomFormDescription,
     CustomFormComponentResultTypes
@@ -169,11 +169,6 @@ export class ModalFormEx extends FormEx<boolean> {
         }
         return this
     }
-}
-
-type SimpleFormImage = {
-    data: string
-    type: SimpleFormImageType
 }
 
 export class SimpleFormEx extends FormEx<number> {

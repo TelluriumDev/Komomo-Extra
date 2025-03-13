@@ -9,6 +9,11 @@ export enum SimpleFormImageType {
     PATH = "path"
 }
 
+export type SimpleFormImage = {
+    data: string
+    type: SimpleFormImageType
+}
+
 export type Result<T> = {
     /**
      * The result of the component.
