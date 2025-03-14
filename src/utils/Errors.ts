@@ -4,18 +4,23 @@ import modernErrorsClean from "modern-errors-clean"
 /**
  * an error that is thrown by the library.
  * - 库抛出的错误。
+ * @description
+ * You can get the `stack' property to get the stack trace information in a formatted way.
+ * - 你可以通过 `stack' 属性获取格式化后的堆栈信息。
  */
 export const KomomoError = ModernError.subclass("KomomoError", {
     plugins: [modernErrorsClean],
     custom: class extends ModernError {
         constructor(message: string, options?: any) {
-            if (options.causedBy) {
+            const causedBy = options?.causedBy
+            if (causedBy) {
                 message += `
 caused by:
 ${options.causedBy}
 `
             }
             super(message, options)
+            this.causedBy = causedBy
         }
 
         /**
