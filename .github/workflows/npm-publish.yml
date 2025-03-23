@@ -18,17 +18,17 @@ jobs:
               with:
                 node-version: 20.11.1
                 registry-url: 'https://registry.npmjs.org'
+                cache: "pnpm"
 
             - name: Install dependencies and build
               run: |
-                npm i
+                pnpm install
                 npx gulp build
 
             - name: Publish to npm
               run: |
                 cp README.md ./dist/KomomoExtra/
-                cd ./dist/KomomoExtra
-                npm publish
+                pnpm publish
               env: 
                 NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
 

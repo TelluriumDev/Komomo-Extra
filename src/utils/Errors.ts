@@ -7,6 +7,15 @@ import modernErrorsClean from "modern-errors-clean"
  * @description
  * You can get the `stack' property to get the stack trace information in a formatted way.
  * - 你可以通过 `stack' 属性获取格式化后的堆栈信息。
+ * @example
+ * ```
+ * const logger = Logger.newLogger("test")
+ * try {
+ *     // do something...
+ * } catch (e) {
+ *     logger.error(e.stack)
+ * }
+ * ```
  */
 export const KomomoError = ModernError.subclass("KomomoError", {
     plugins: [modernErrorsClean],

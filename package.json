@@ -4,13 +4,14 @@
     "description": "Extra Library for the LeviLamina JavaScript mod with Komomo",
     "main": "index.js",
     "types": "index.d.ts",
-    "scripts": {
-        "build": "tsc"
-    },
+    "scripts": {},
     "type": "module",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/TelluriumDev/Komomo-Extra.git"
+    },
+    "publishConfig": {
+        "directory": "dist/KomomoExtra"
     },
     "author": "TelluriumDev",
     "license": "CC0-1.0",
