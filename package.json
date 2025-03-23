@@ -11,7 +11,8 @@
         "url": "git+https://github.com/TelluriumDev/Komomo-Extra.git"
     },
     "publishConfig": {
-        "directory": "dist/KomomoExtra"
+        "directory": "dist/KomomoExtra",
+        "linkDirectory": true
     },
     "author": "TelluriumDev",
     "license": "CC0-1.0",
