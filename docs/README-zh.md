@@ -101,9 +101,10 @@
 你可以通过在项目目录中的终端运行以下命令来构建该库：
 
 ```bash
+npm i -g pnpm // 如果你还没有安装 pnpm
 git clone https://github.com/TelluriumDev/Komomo-Extra.git
 cd Komomo-Extra
-npm i
+pnpm install
 git clone https://github.com/TelluriumDev/KomomoHelperLib.git
 npx gulp build
 ```

@@ -101,9 +101,10 @@ don't forget to add `KomomoExtra` to your `dependencies` in your `manifest.json`
 you can build the library by running the following command in the terminal in your project directory:
 
 ```bash
+npm i -g pnpm // if you don not have pnpm
 git clone https://github.com/TelluriumDev/Komomo-Extra.git
 cd Komomo-Extra
-npm i
+pnpm install
 git clone https://github.com/TelluriumDev/KomomoHelperLib.git
 npx gulp build
 ```
